@@ -1,4 +1,4 @@
-const CACHE = 'spark-survey-v1';
+const CACHE = 'spark-survey-v2';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -18,6 +18,13 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request).then(response => {
+      // Network succeeded — save a fresh copy for offline use next time,
+      // so the cached fallback is always whatever was last successfully
+      // loaded online. No manual version bump ever needed.
+      const responseClone = response.clone();
+      caches.open(CACHE).then(cache => cache.put(e.request, responseClone));
+      return response;
+    }).catch(() => caches.match(e.request))
   );
 });
